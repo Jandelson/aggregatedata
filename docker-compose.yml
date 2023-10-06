@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: db
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: 'agregatedata'
+      MYSQL_USER: 'admin'
+      MYSQL_PASSWORD: 'agregatedata'
+      MYSQL_ROOT_PASSWORD: 'agregatedata'
+      SERVICE_NAME: mysql
+    ports:
+      - '3306:3306'
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - agregatedata-network
+
+#Docker Networks
+networks:
+  agregatedata-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
