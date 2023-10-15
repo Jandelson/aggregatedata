@@ -1,35 +1,41 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Http\Controllers\SheetsAgregateController;
 use App\Http\Requests\UploadFileRequest;
-use App\Services\SheetsAgregator;
+use App\Services\SheetsAgregatorService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\post;
-use function Pest\Laravel\withoutMiddleware;
+use Tests\TestCase;
 
-// Tests for SheetsAgregateController
-it('should upload files and redirect back with success message', function () {
-    // Mock the SheetsAgregator class
-    $sheetsAgregatorMock = Mockery::mock(SheetsAgregator::class);
-    $sheetsAgregatorMock->shouldReceive('handleFiles')
-        ->once()
-        ->andReturn(response()->json(['success' => 'File aggregated successfully']));
+class SheetsAgregateControllerTest extends TestCase
+{
+    public function testUploadFiles()
+    {
+        // Create a mock SheetsAgregatorService
+        $sheetsAgregatorServiceMock = $this->createMock(SheetsAgregatorService::class);
 
-    // Create a new instance of the controller with the mocked SheetsAgregator dependency
-    $controller = new SheetsAgregateController($sheetsAgregatorMock);
+        // Set up the mock to return a fake response
+        $fakeResponse = response()->json(['success' => true]);
+        $sheetsAgregatorServiceMock->expects($this->once())
+            ->method('handleFiles')
+            ->willReturn($fakeResponse);
 
-    // Create an upload request with a test file
-    $file = UploadedFile::fake()->create('test.xlsx');
-    $request = UploadFileRequest::create('/upload', 'POST', ['files' => [$file]]);
+        // Create a mock UploadFileRequest with some fake data
+        $fakeRequestData = ['files' => ['file1.csv', 'file2.csv']];
+        $fakeRequest = UploadFileRequest::create('/upload', 'POST', $fakeRequestData);
 
-    // Make the request to the controller
-    actingAs(factory(User::class)->create());
-    $response = $controller->uploadFiles($request);
+        // Create a new SheetsAgregateController and call the uploadFiles method
+        $controller = new SheetsAgregateController($sheetsAgregatorServiceMock);
+        $response = $controller->uploadFiles($fakeRequest);
 
-    // Assert that the response is a redirect and contains the success message
-    expect($response)->toBeInstanceOf(RedirectResponse::class);
-    expect($response->getSession()->get('success'))->toBe('File aggregated successfully');
-});
+        // Verify that the response is a RedirectResponse
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+
+        // Verify that the response redirects back and includes the fake response data
+        $this->assertTrue(session()->has('success'));
+        $this->assertEquals(session('success'), true);
+    }
+}
