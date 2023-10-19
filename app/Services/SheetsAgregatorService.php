@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Destination;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -40,7 +41,14 @@ class SheetsAgregatorService
 
     private function processAgregate(array $filesPath): Response
     {
-        $process = new Process(['python3',  base_path() . '/python/script.py', json_encode($filesPath)]);
+        $process = new Process(
+            [
+                'python3',
+                base_path() . '/python/script.py',
+                json_encode($filesPath),
+                $this->getConfigDestination()
+            ]
+        );
         $process->run();
 
         if (!$process->isSuccessful()) {
@@ -49,13 +57,35 @@ class SheetsAgregatorService
             return response()->json(['error' => 'Failed to process agregate files'], 500);
         }
 
-        $linkDownloadFile = trim($process->getOutput());
+        $returnPython = explode('--separator--', trim($process->getOutput()));
+        $linkDownloadFile = $returnPython[0];
+        $msgSuccess = 'File agragated successfully' . '<br>' . $returnPython[1] ?? '';
 
         $this->removeFilesUpload($filesPath);
 
         return response()->json([
-            'success' => 'File agragated successfully',
+            'success' => $msgSuccess,
             'link' => $linkDownloadFile
         ]);
+    }
+
+    private function getConfigDestination()
+    {
+        $destination = Destination::where('enable', '1')->first();
+
+        if (!$destination) {
+            return '{}';
+        }
+
+        if ($destination) {
+            return '{
+                    "host": "' . $destination->host . '",
+                    "db_name": "' . $destination->database .'",
+                    "user_name": "' . $destination->user .'",
+                    "password": "' . $destination->password .'",
+                    "table_name": "' . $destination->table_name .'",
+                    "if_exists": "' . $destination->if_exists .'"
+                }';
+        }
     }
 }

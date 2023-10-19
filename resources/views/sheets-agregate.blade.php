@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="mx-auto max-w-7xl">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="py-4 hover:py-8">
@@ -16,7 +16,9 @@
                         @csrf
                         <div class="container">
                             <label for="files">Select files</label>
-                            <input id="files" type="file" name="files[]" multiple />
+                            <input id="files" type="file" name="files[]"
+                                accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                multiple />
                         </div>
                         <div class="py-4 hover:py-8">
                             <button
